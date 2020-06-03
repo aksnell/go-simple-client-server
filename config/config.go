@@ -1,0 +1,28 @@
+package config
+
+import (
+	"log"
+	"time"
+
+	"github.com/joeshaw/envdecode"
+)
+
+type Conf struct {
+	Server serverConf
+	Debug        bool          `env:"DEBUG,required"`
+}
+
+type serverConf struct {
+	Port         int           `env:"SERVER_PORT,default=8080"`
+	TimeoutRead  time.Duration `env:"SERVER_TIMEOUT_READ,required"`
+	TimeoutWrite time.Duration `env:"SERVER_TIMEOUT_WRITE,required"`
+	TimeoutIdle  time.Duration `env:"SERVER_TIMEOUT_IDLE,required"`
+}
+
+func AppConfig() *Conf {
+	c := Conf{}
+	if err := envdecode.StrictDecode(&c); err != nil {
+		log.Fatalf("Failed to decode: %s", err)
+	}
+	return &c
+}

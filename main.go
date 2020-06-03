@@ -2,28 +2,39 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"github.com/asnell/client-server/config"
+	"github.com/asnell/client-server/router"
+	"github.com/asnell/client-server/server"
+	"github.com/asnell/client-server/util/logger"
 	"net/http"
-	"time"
 )
 
 func greet(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello World!")
+
 }
 
 func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", greet)
-	log.Println("Starting Server :8080")
+	appConfig := config.AppConfig()
+
+	l := logger.New(appConfig.Debug)
+
+	app := server.New(l)
+
+	r := router.New(app)
+
+	address := fmt.Sprintf(":%d", appConfig.Server.Port)
+
+	l.Info().Msgf("Starting server :%v", address)
+
 	s := &http.Server{
-		Addr:         ":8080",
-		Handler:      mux,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		IdleTimeout:  120 * time.Second,
+		Addr:         address,
+		Handler:      r,
+		ReadTimeout:  appConfig.Server.TimeoutRead,
+		WriteTimeout: appConfig.Server.TimeoutWrite,
+		IdleTimeout:  appConfig.Server.TimeoutIdle,
 	}
 
 	if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		log.Fatal("Server startup failed!")
+		l.Fatal().Err(err).Msg("Server startup failed!")
 	}
 }
